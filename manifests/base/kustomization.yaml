@@ -8,7 +8,6 @@ namespace: kagent
 # Manifests to customize
 resources:
   - deployment.yaml
-  - remotemcpserver.yaml
 
 # Easily override the container image registry, name, or tag.
 images:

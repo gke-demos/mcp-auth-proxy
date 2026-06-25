@@ -60,7 +60,11 @@ smoketest: ## Run the local integration/smoketest.
 	./scripts/smoketest.sh
 
 .PHONY: build-installer
-build-installer: ## Generate a consolidated YAML with the specified image.
+build-installer: ## Generate consolidated YAMLs with the specified image.
 	mkdir -p dist
-	kubectl kustomize manifests/ | \
+	# Build core installation (proxy only)
+	kubectl kustomize manifests/base/ | \
 		sed "s|image: ghcr.io/gke-demos/mcp-auth-proxy:latest|image: $(IMG)|g" > dist/install.yaml
+	# Build overlay installation (proxy + RemoteMCPServer)
+	kubectl kustomize manifests/with-remotemcp/ | \
+		sed "s|image: ghcr.io/gke-demos/mcp-auth-proxy:latest|image: $(IMG)|g" > dist/install-with-remotemcp.yaml
