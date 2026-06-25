@@ -9,8 +9,10 @@ namespace: kagent
 resources:
   - deployment.yaml
 
-# Easily override the container image registry, name, or tag.
+# Easily override the container image registry, name, tag, or digest.
 images:
   - name: ghcr.io/gke-demos/mcp-auth-proxy
     newName: ghcr.io/gke-demos/mcp-auth-proxy
     newTag: latest
+    # To use a digest instead of a tag, uncomment the following line and comment/remove newTag:
+    # digest: sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef

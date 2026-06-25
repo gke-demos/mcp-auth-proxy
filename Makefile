@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Image registry and name
+# Image registry, name, tag, and digest
 REGISTRY ?= ghcr.io
 IMAGE_NAME ?= gke-demos/mcp-auth-proxy
 TAG ?= latest
+DIGEST ?=
+
+ifneq ($(DIGEST),)
+IMG ?= $(REGISTRY)/$(IMAGE_NAME)@$(DIGEST)
+else
 IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+endif
 
 .PHONY: all
 all: build test
