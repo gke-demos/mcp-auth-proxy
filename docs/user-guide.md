@@ -73,12 +73,18 @@ export KSA_NAME="google-mcp-auth-proxy"
 ### Step 3: Grant IAM Roles to the KSA Principal
 Because we do not use an intermediate GSA, you grant GCP IAM roles **directly** to the Kubernetes ServiceAccount's workload identity subject.
 
-To allow the proxy to authorize requests to GKE's cluster list or GKE's MCP Server, grant the **Kubernetes Engine Viewer** role (`roles/container.viewer`) or **Kubernetes Engine Developer** role (`roles/container.developer`) to the KSA principal:
+To allow the proxy to manage GKE clusters and interact with the GKE MCP Server, grant the **Kubernetes Engine Admin** role (`roles/container.admin`) and the **MCP Tool User** role (`roles/mcp.toolUser`) directly to the KSA principal:
 
 ```bash
-# Grant container.viewer role directly to the KSA Workload Identity principal
+# 1. Grant GKE Admin role directly to the KSA Workload Identity principal
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-  --role=roles/container.viewer \
+  --role=roles/container.admin \
+  --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${PROJECT_ID}.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}" \
+  --condition=None
+
+# 2. Grant MCP Tool User role directly to the KSA Workload Identity principal
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --role=roles/mcp.toolUser \
   --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${PROJECT_ID}.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}" \
   --condition=None
 ```
