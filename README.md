@@ -6,8 +6,10 @@ This allows agents to authenticate to Google MCP endpoints using Workload Identi
 
 ## Documentation
 
-For detailed design, architecture, configuration, and rollout instructions, please refer to:
-* [MCP Auth Proxy Design & Rollout Specification](docs/mcp-proxy-design.md)
+To help you get started quickly and configure the proxy in your environment, refer to the following guides:
+
+* [**MCP Auth Proxy User Guide**](docs/user-guide.md) — Step-by-step instructions on deploying to the `kagent` namespace, environment variable configurations, and configuring GKE Workload Identity Federation.
+* [**MCP Auth Proxy Design Specification**](docs/design/mcp-proxy-design.md) — High-level architectural patterns, goals, non-goals, and implementation details.
 
 ## Features
 
