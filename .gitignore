@@ -7,6 +7,8 @@ web_reach/
 dist/
 build/
 bin/
+coverage.out
+*.out
 
 # Environment variables and secrets
 .env

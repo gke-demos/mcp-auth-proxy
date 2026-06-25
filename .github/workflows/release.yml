@@ -1,0 +1,82 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build the installer against (e.g. v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # required to create the release + upload assets
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  release:
+    name: build installer & create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          # Strip a leading "v" for the docker tag (semver tags ship as
+          # `1.2.3` on ghcr.io per docker/metadata-action's default).
+          docker_tag="${tag#v}"
+          echo "tag=${tag}"               >> "$GITHUB_OUTPUT"
+          echo "docker_tag=${docker_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Build install.yaml
+        run: |
+          IMG="${REGISTRY}/${GITHUB_REPOSITORY}:${{ steps.tag.outputs.docker_tag }}"
+          echo "Building installer with IMG=${IMG}"
+          make build-installer IMG="${IMG}"
+          ls -la dist/install.yaml
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/install.yaml
+          body: |
+            ## Install
+
+            You can deploy the Google MCP Auth Proxy directly to your GKE cluster:
+
+            ```bash
+            kubectl apply -f https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.tag }}/install.yaml
+            ```
+
+            ### Assets
+
+            - `install.yaml` — Complete consolidated Kubernetes manifests, pinned to `${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.tag.outputs.docker_tag }}`.
+
+            > **Note**: the container image is built by the `Image` workflow on the same tag push. If you apply this release immediately and see `ImagePullBackOff`, please wait a few minutes for the GHA build runner to finish publishing the multi-platform image.

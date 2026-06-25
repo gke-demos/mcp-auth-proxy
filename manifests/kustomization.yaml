@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Default namespace to apply to all resources.
+# Change this to deploy the proxy and its resources to any custom namespace.
+namespace: kagent
+
+# Manifests to customize
+resources:
+  - deployment.yaml
+  - remotemcpserver.yaml
+
+# Easily override the container image registry, name, or tag.
+images:
+  - name: ghcr.io/gke-demos/mcp-auth-proxy
+    newName: ghcr.io/gke-demos/mcp-auth-proxy
+    newTag: latest

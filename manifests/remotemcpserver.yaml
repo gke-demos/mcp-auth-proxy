@@ -1,0 +1,8 @@
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: google-cloud-mcp
+spec:
+  url: http://google-mcp-auth-proxy.kagent:8080/mcp
+  protocol: STREAMABLE_HTTP
+  description: Google Cloud MCP via in-cluster auth proxy

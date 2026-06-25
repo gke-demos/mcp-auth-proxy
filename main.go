@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2/google"
@@ -25,7 +26,7 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 func main() {
 	upstreamStr := os.Getenv("UPSTREAM_URL")
 	if upstreamStr == "" {
-		log.Fatal("UPSTREAM_URL environment variable is required")
+		upstreamStr = "https://container.googleapis.com"
 	}
 
 	upstreamURL, err := url.Parse(upstreamStr)
@@ -39,8 +40,29 @@ func main() {
 	}
 
 	ctx := context.Background()
-	// Use the "cloud-platform" scope as it is standard for GCP APIs
-	tokenSource, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	scopesStr := os.Getenv("OAUTH_SCOPES")
+	var scopes []string
+	if scopesStr != "" {
+		parts := strings.Split(scopesStr, ",")
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				scopes = append(scopes, trimmed)
+			}
+		}
+	}
+
+	// If no scopes were explicitly configured, choose the default based on the target upstream URL.
+	if len(scopes) == 0 {
+		if strings.Contains(upstreamStr, "container.googleapis.com") {
+			scopes = []string{"https://www.googleapis.com/auth/container"}
+		} else {
+			scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
+		}
+	}
+
+	log.Printf("Initializing Google Default Token Source with scopes: %v", scopes)
+	tokenSource, err := google.DefaultTokenSource(ctx, scopes...)
 	if err != nil {
 		log.Fatalf("Failed to initialize Google Default Token Source: %v", err)
 	}
