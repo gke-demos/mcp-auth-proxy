@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kagent
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: google-mcp-auth-proxy
+  namespace: kagent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: google-mcp-auth-proxy
+  namespace: kagent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: google-mcp-auth-proxy
+  template:
+    metadata:
+      labels:
+        app: google-mcp-auth-proxy
+    spec:
+      serviceAccountName: google-mcp-auth-proxy
+      containers:
+      - name: proxy
+        # Replace <org> with your container registry or org name
+        image: ghcr.io/gke-demos/mcp-auth-proxy:latest
+        env:
+        - name: UPSTREAM_URL
+          # Replace with your actual Google MCP server endpoint
+          value: https://us-central1-aiplatform.googleapis.com/v1/projects/gke-demos-345619/locations/us-central1/publishers/google/models/gemini-1.5-pro:predict
+        - name: LISTEN_ADDR
+          value: ":8080"
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: google-mcp-auth-proxy
+  namespace: kagent
+spec:
+  selector:
+    app: google-mcp-auth-proxy
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+---
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: google-cloud-mcp
+  namespace: kagent
+spec:
+  url: http://google-mcp-auth-proxy.kagent:8080/mcp
+  protocol: STREAMABLE_HTTP
+  description: Google Cloud MCP via in-cluster auth proxy
