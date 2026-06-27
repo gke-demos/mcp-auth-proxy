@@ -73,7 +73,9 @@ export KSA_NAME="google-mcp-auth-proxy"
 ### Step 3: Grant IAM Roles to the KSA Principal
 Because we do not use an intermediate GSA, you grant GCP IAM roles **directly** to the Kubernetes ServiceAccount's workload identity subject.
 
-To allow the proxy to manage GKE clusters and interact with the GKE MCP Server, grant the **Kubernetes Engine Admin** role (`roles/container.admin`) and the **MCP Tool User** role (`roles/mcp.toolUser`) directly to the KSA principal:
+To allow the proxy to manage GKE clusters and interact with the GKE MCP Server, grant:
+1. The **Kubernetes Engine Admin** role (`roles/container.admin`) and the **MCP Tool User** role (`roles/mcp.toolUser`) directly to the KSA principal.
+2. The **Service Account User** role (`roles/iam.serviceAccountUser`) on the GKE Node Service Account (e.g. the Compute Engine default service account or a custom node service account) to allow GKE to associate that service account with the VM nodes during cluster creation.
 
 ```bash
 # 1. Grant GKE Admin role directly to the KSA Workload Identity principal
@@ -87,6 +89,13 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
   --role=roles/mcp.toolUser \
   --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${PROJECT_ID}.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}" \
   --condition=None
+
+# 3. Grant Service Account User role on the Node Service Account (e.g., Compute Engine default service account)
+# Replace '${PROJECT_NUMBER}-compute@developer.gserviceaccount.com' with your custom node service account if applicable.
+gcloud iam service-accounts add-iam-policy-binding \
+  ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+  --role=roles/iam.serviceAccountUser \
+  --member="principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${PROJECT_ID}.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}"
 ```
 
 #### Explanation of KSA Principal URI:
